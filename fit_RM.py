@@ -129,8 +129,8 @@ def fit_rotation_measure(archive, outdir, label, nchan, nbin, window):
 
     # Set bilby priors
     priors = dict()
-    priors["rm"] = bilby.core.prior.Uniform(-2000, 2000, "RM")
-    priors["pa_zero"] = bilby.core.prior.Uniform(-np.pi/2, np.pi, r"$\Psi_{0}$")
+    priors["rm"] = bilby.core.prior.Uniform(-2000, 2000, r"RM (rad m$^{-2}$)")
+    priors["pa_zero"] = bilby.core.prior.Uniform(-np.pi/2, np.pi, r"$\Psi_{0}$ (deg)")
     priors["sigma"] = bilby.core.prior.Uniform(0, 1e4, r"$\sigma$")
 
     likelihood = RMLikelihood(Stokes_Q, Stokes_U, freqs*1e6, freq_cen*1e6, fit_QU)
@@ -148,7 +148,7 @@ def fit_rotation_measure(archive, outdir, label, nchan, nbin, window):
     rm_upp = upp_bound - median
     rm_low = median - low_bound
 
-    print("RM = {0} +{1}/-{2} (68% CI)".format(rm, rm_upp, rm_low))
+    print("RM = {0} +{1}/-{2} rad/m^2 (68% CI)".format(rm, rm_upp, rm_low))
 
 
 # If run directly
