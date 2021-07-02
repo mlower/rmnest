@@ -1,5 +1,5 @@
-# rmnest
-Bayesian method for estimating rotation measures via direct fits to Stokes Q &amp; U
+# RMNest
+A simple Bayesian inference script for estimating rotation measures via direct fits to Stokes Q &amp; U spectra.
 
 Based on the methodology outlined in the online supplementary materials of [Bannister et al. (2019)](https://ui.adsabs.harvard.edu/abs/2019Sci...365..565B/abstract).
 
