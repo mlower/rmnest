@@ -23,6 +23,20 @@ def get_input_arguments(parser):
     return parser.parse_args()
 
 
+def apply_weights(data, weights, pol=True):
+    """ Apply weights to zero RFI affected channels """
+
+    bins = int(np.shape(data)[-1])
+    mask = weights.T * np.ones((1,bins))
+
+    if pol == True:
+        for i in range(0,4):
+            data[i,:,:] = np.multiply(mask, data[i,:,:])
+        return data
+    else:
+        return np.multiply(mask, data)
+
+
 def get_median_and_bounds(posterior, nbins=80):
     pdf, vals = np.histogram(posterior, nbins)
     pdf = list(np.float_(pdf))
@@ -52,7 +66,7 @@ def find_good_bins(data, nbin, thresh):
 def position_angle(freq, pa_zero, rm, freq_cen):
     """ Polarisation position angle as a function of freq."""
     c = 2.998e8 # vacuum speed of light in m/s
-    return pa_zero + rm*(((c/freq)**2) - ((c/(freq_cen*1e6))**2))
+    return pa_zero + rm*(((c/freq)**2) - ((c/(freq_cen))**2))
 
 
 def fit_QU(freq, q, u, pa_zero, rm, freq_cen):
@@ -111,8 +125,8 @@ class RMLikelihood(bilby.likelihood.Likelihood):
 def fit_rotation_measure(archive, outdir, label, nchan, nbin, window):
     """ Runs the rotation measure fitting routine. """
 
-    # Extract the on-pulse data from the archive 
-    data = archive.get_data()[0,:,:,:]
+    # Get weights and extract the on-pulse data from the archive 
+    data = apply_weights(archive.get_data()[0,:,:,:], archive.get_weights())
     on_pulse = np.mean(data[:,:,window[0]:window[1]], axis=2)
 
     # Extract Stokes I and find bad frequency channels
