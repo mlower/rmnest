@@ -122,80 +122,94 @@ class RMLikelihood(bilby.likelihood.Likelihood):
         return ln_l
 
 
-def fit_rotation_measure(archive, outdir, label, nchan, nbin, window):
-    """ Runs the rotation measure fitting routine. """
+class RMNest(object):
+    def __init__(self, Stokes_Q, Stokes_U, freqs, freq_cen):
+        self.priors = self._get_priors()
+        self.likelihood = RMLikelihood(Stokes_Q, Stokes_U, freqs*1e6, freq_cen*1e6, fit_QU)
 
-    # Get weights and extract the on-pulse data from the archive 
-    data = apply_weights(archive.get_data()[0,:,:,:], archive.get_weights())
-    on_pulse = np.mean(data[:,:,window[0]:window[1]], axis=2)
+    def fit(self, label="RM_Nest", outdir="./", **kwargs):
+        """ Runs the rotation measure fitting routine. """
+        bilby.utils.check_directory_exists_and_if_not_mkdir(outdir)
+        result = bilby.run_sampler(
+            likelihood=self.likelihood,
+            priors=self.priors,
+            sampler="dynesty",
+            nlive=1024,
+            outdir=outdir,
+            plot=False,
+            label=label,
+            **kwargs,
+        )
 
-    # Extract Stokes I and find bad frequency channels
-    Stokes_I = on_pulse[0,:]
-    zeroed_chans = np.argwhere(Stokes_I <= 0.0)
+        self.result = result
+        self.post_json_file = bilby.result.result_file_name(outdir, result.label)
 
-    # Extract Stokes Q & U
-    Stokes_Q = np.delete(on_pulse[1,:], zeroed_chans)
-    Stokes_U = np.delete(on_pulse[2,:], zeroed_chans)
+        posterior = result.posterior.rm
+        median, low_bound, upp_bound = get_median_and_bounds(posterior)
+        rm = median
+        rm_upp = upp_bound - median
+        rm_low = median - low_bound
 
-    # Get channel frequencies and centre frequency
-    freqs = np.delete(archive.get_frequencies(), zeroed_chans)
-    freq_cen = archive.get_centre_frequency()
+        print("RM = {0} +{1}/-{2} rad/m^2 (68% CI)".format(rm, rm_upp, rm_low))
 
-    # Set bilby priors
-    priors = dict()
-    priors["rm"] = bilby.core.prior.Uniform(-2000, 2000, r"RM (rad m$^{-2}$)")
-    priors["pa_zero"] = bilby.core.prior.Uniform(-np.pi/2, np.pi, r"$\Psi_{0}$ (deg)")
-    priors["sigma"] = bilby.core.prior.Uniform(0, 1e4, r"$\sigma$")
+    def plot(self):
+        self.result.plot_corner(dpi=100)
+        plt.close()
 
-    likelihood = RMLikelihood(Stokes_Q, Stokes_U, freqs*1e6, freq_cen*1e6, fit_QU)
+    @classmethod
+    def from_psrchive(cls, ar_file, window, dedisperse=None, fscrunch=None):
+        archive = psrchive.Archive_load(ar_file)
+        archive.remove_baseline()
+        if dedisperse is not None:
+            archive.dedisperse()
+        if fscrunch is not None:
+            archive.fscrunch_to_nchan(fscrunch)
 
-    result = bilby.run_sampler(
-        likelihood=likelihood, priors=priors, sampler="dynesty",
-        nlive=1024, outdir=outdir, plot=False, label=label)
+        nchan = archive.get_nchan()
+        nbin = archive.get_nbin()
 
-    result.plot_corner(dpi=100)
-    plt.close()
+        window_start = int(float(window.split(":")[0]) * nbin)
+        window_end = int(float(window.split(":")[1]) * nbin)
 
-    posterior = result.posterior.rm
-    median, low_bound, upp_bound = get_median_and_bounds(posterior)
-    rm = median
-    rm_upp = upp_bound - median
-    rm_low = median - low_bound
+        window = [window_start, window_end]
 
-    print("RM = {0} +{1}/-{2} rad/m^2 (68% CI)".format(rm, rm_upp, rm_low))
+        # Get weights and extract the on-pulse data from the archive
+        data = apply_weights(archive.get_data()[0,:,:,:], archive.get_weights())
+        on_pulse = np.mean(data[:,:,window[0]:window[1]], axis=2)
+
+        # Extract Stokes I and find bad frequency channels
+        Stokes_I = on_pulse[0,:]
+        zeroed_chans = np.argwhere(Stokes_I <= 0.0)
+
+        # Extract Stokes Q & U
+        Stokes_Q = np.delete(on_pulse[1,:], zeroed_chans)
+        Stokes_U = np.delete(on_pulse[2,:], zeroed_chans)
+
+        # Get channel frequencies and centre frequency
+        freqs = np.delete(archive.get_frequencies(), zeroed_chans)
+        freq_cen = archive.get_centre_frequency()
+
+        return cls(Stokes_Q, Stokes_U, freqs, freq_cen)
+
+    def _get_priors(self):
+        # Set bilby priors
+        priors = bilby.prior.PriorDict()
+        priors["rm"] = bilby.core.prior.Uniform(-2000, 2000, r"RM (rad m$^{-2}$)")
+        priors["pa_zero"] = bilby.core.prior.Uniform(-np.pi/2, np.pi, r"$\Psi_{0}$ (deg)")
+        priors["sigma"] = bilby.core.prior.Uniform(0, 1e4, r"$\sigma$")
+        return priors
 
 
 def main():
     parser = argparse.ArgumentParser()
     args = get_input_arguments(parser)
 
-    if args.archive == None:
+    if args.archive is None:
         raise ValueError('No archive specified.')
-    else:
-        archive = psrchive.Archive_load(args.archive)
 
-    archive.remove_baseline()
-    
-    if args.dedisperse == None:
-        pass
-    else:
-        archive.dedisperse()
-    
-    if args.fscrunch == None:
-        pass
-    else:
-        archive.fscrunch_to_nchan(args.fscrunch)
-
-    nchan = archive.get_nchan()
-    nbin = archive.get_nbin()
-
-    window_start = int(float(args.window.split(":")[0]) * nbin)
-    window_end = int(float(args.window.split(":")[1]) * nbin)
-
-    window = [window_start, window_end]
-
-    fit_rotation_measure(archive, args.outdir, args.label, nchan, 
-        nbin, window)
+    rmnest = RMNest.from_psrchive(args.archive, args.window, dedisperse=args.dedisperse, fscrunch=args.fscrunch)
+    rmnest.fit(label=args.label, outdir=args.outdir)
+    rmnest.plot()
 
     print("Done!")
 
