@@ -165,9 +165,7 @@ def fit_rotation_measure(archive, outdir, label, nchan, nbin, window):
     print("RM = {0} +{1}/-{2} rad/m^2 (68% CI)".format(rm, rm_upp, rm_low))
 
 
-# If run directly
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser()
     args = get_input_arguments(parser)
 
@@ -200,3 +198,8 @@ if __name__ == "__main__":
         nbin, window)
 
     print("Done!")
+
+# If run directly
+if __name__ == "__main__":
+    main()
+
