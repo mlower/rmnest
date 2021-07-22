@@ -1,6 +1,6 @@
 import numpy as np
 import bilby
-from .model import FaradayRotation
+from model import FaradayRotation,GeneralisedFaradayRotation
 
 class RMLikelihood(bilby.likelihood.Likelihood):
     def __init__(self,

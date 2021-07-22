@@ -8,8 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=False)
 
-from .utils import *
-from .likelihood import *
+from utils import *
+from likelihood import *
 
 
 def get_input_arguments(parser):
