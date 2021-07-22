@@ -24,7 +24,7 @@ class RMLikelihood(bilby.likelihood.Likelihood):
         """
 
         super().__init__()
-        self.stokes_q = stokes_u
+        self.stokes_q = stokes_q
         self.stokes_u = stokes_u
         self.freq = freq
         self.freq_cen = freq_cen

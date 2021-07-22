@@ -25,7 +25,7 @@ def get_input_arguments(parser):
         help="Label added to output files.")
     parser.add_argument("--window", type=str, default="0.0:1.0",
         help="Window to place around the pulse, default = 0.0:1.0")
-    parser.add_argument("--gfr", type=str, default="False",
+    parser.add_argument("--gfr", type=str2bool, default=False,
         help="Fit for generalised Faraday rotation (GFR).")
     parser.add_argument("--alpha", dest="free_alpha", type=str2bool,
         default=False, help="Use a free spectral dependence for GFR fitting.")
@@ -58,7 +58,7 @@ class RMNest(object):
             outdir=outdir,
             plot=False,
             label=label,
-            **kwargs,
+            **kwargs
         )
 
         self.result = result
@@ -92,7 +92,7 @@ class RMNest(object):
             outdir=outdir,
             plot=False,
             label=label,
-            **kwargs,
+            **kwargs
         )
 
         self.result = result
@@ -196,8 +196,8 @@ def main():
         fscrunch=args.fscrunch
     )
 
-    if args.gfr == "True":
-        if args.free_alpha == "True":
+    if args.gfr == True:
+        if args.free_alpha == True:
             rmnest.fit_gfr(label=args.label, outdir=args.outdir,
                 free_alpha=True)
         else:
