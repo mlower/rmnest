@@ -1,7 +1,6 @@
 import numpy as np
 
 c = 2.998e8 # vacuum speed of light in m/s
-DEG2RAD = np.pi/180
 
 
 class FaradayRotation(object):
@@ -118,7 +117,7 @@ class GeneralisedFaradayRotation(object):
             - ((c/(self.freq_cen))**self.alpha)))
         return pa_freq
 
-
+    
     def Q_model(self):
         """ Stokes Q model """
         return np.cos(2*self.psi) * np.cos(2*self.chi)
@@ -127,7 +126,6 @@ class GeneralisedFaradayRotation(object):
     def U_model(self):
         """ Stokes U model """
         return np.sin(2*self.psi) * np.cos(2*self.chi)
-
 
     def V_model(self):
         """ Stokes V model """
@@ -150,16 +148,16 @@ class GeneralisedFaradayRotation(object):
             [-np.sin(self.theta), 0, np.cos(self.theta)]])
 
 
-    def generate_gfr_model(freq, psi_zero, RM, alpha, chi, phi, theta):
+    def generate_gfr_model(self):
         """ Generate the generalised Faraday rotation model """
 
-        psi = get_Psi()
+        self.psi = self.get_Psi()
         stokes_params = np.transpose(
-            np.array([Q_model(psi, chi), U_model(psi, chi), V_model(chi)])
+            np.array([self.Q_model(), self.U_model(), self.V_model()])
             )
 
         rotated_stokes = np.transpose(
-            stokes_params.dot(rotate_U(theta)).dot(rotate_V(phi))
+            stokes_params.dot(self.rotate_U()).dot(self.rotate_V())
         )
 
         return rotated_stokes[0], rotated_stokes[1], rotated_stokes[2]

@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 plt.rc('text', usetex=False)
 
 from utils import *
+from model import *
 from likelihood import *
 
 
@@ -54,7 +55,7 @@ class RMNest(object):
             likelihood=self.likelihood,
             priors=self.priors,
             sampler="dynesty",
-            nlive=1024,
+            nlive=512,
             outdir=outdir,
             plot=False,
             label=label,
@@ -80,7 +81,7 @@ class RMNest(object):
             self.stokes_q,
             self.stokes_u,
             self.stokes_v,
-            self.freq*1e6,
+            self.freqs*1e6,
             self.freq_cen*1e6,
         )
         bilby.utils.check_directory_exists_and_if_not_mkdir(outdir)
@@ -88,7 +89,7 @@ class RMNest(object):
             likelihood=self.likelihood,
             priors=self.priors,
             sampler="dynesty",
-            nlive=1024,
+            nlive=512,
             outdir=outdir,
             plot=False,
             label=label,
@@ -96,15 +97,17 @@ class RMNest(object):
         )
 
         self.result = result
-        self.post_json_file = bilby.result.result_file_name(outdir, result.label)
+        self.post_json_file = bilby.result.result_file_name(outdir,
+            result.label)
 
-        posterior = result.posterior.rm
+        posterior = result.posterior.grm
         median, low_bound, upp_bound = get_median_and_bounds(posterior)
-        rm = median
-        rm_upp = upp_bound - median
-        rm_low = median - low_bound
+        grm = median
+        grm_upp = upp_bound - median
+        grm_low = median - low_bound
 
-        print("RM = {0} +{1}/-{2} rad/m^2 (68% CI)".format(rm, rm_upp, rm_low))
+        print("GRM = {0} +{1}/-{2} rad/m^alpha (68% CI)".format(grm, grm_upp, 
+            grm_low))
 
 
     def plot_corner(self):
@@ -170,7 +173,7 @@ class RMNest(object):
         priors["sigma"] = bilby.core.prior.Uniform(0, 100, r"$\sigma$")
 
         # Set spectral dependency to be free, or fixed at freq^-3
-        if free_alpha == "True":
+        if free_alpha == True:
             priors["alpha"] = bilby.core.prior.Uniform(0, 10, r"$\alpha$")
             priors["grm"] = bilby.core.prior.Uniform(0, 200,
                 r"GRM (rad m$^{-\alpha}$)")

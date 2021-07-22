@@ -2,6 +2,9 @@ import numpy as np
 import bilby
 from model import FaradayRotation,GeneralisedFaradayRotation
 
+DEG2RAD = np.pi/180
+
+
 class RMLikelihood(bilby.likelihood.Likelihood):
     def __init__(self,
         stokes_q,
@@ -49,7 +52,7 @@ class GFRLikelihood(bilby.likelihood.Likelihood):
         stokes_q,
         stokes_u,
         stokes_v,
-        stokes_freq,
+        freq,
         freq_cen
     ):
         """
@@ -71,7 +74,7 @@ class GFRLikelihood(bilby.likelihood.Likelihood):
         self.stokes_v = stokes_v
         self.freq = freq
         self.freq_cen = freq_cen
-        self.parameters = dict(psi_zero=None, RM=None, alpha=None, chi=None,
+        self.parameters = dict(psi_zero=None, grm=None, alpha=None, chi=None,
             phi=None, theta=None, sigma=None)
 
     def log_likelihood(self):
@@ -80,16 +83,16 @@ class GFRLikelihood(bilby.likelihood.Likelihood):
         # Total polarisation
         self.p = np.sqrt(self.stokes_q**2 + self.stokes_u**2 + self.stokes_v**2)
 
-        stokes_q_m, stokes_u_m, stokes_v_m = self.model = stokes_model(
+        stokes_q_m, stokes_u_m, stokes_v_m = GeneralisedFaradayRotation(
             self.freq,
-            freq_cen,
+            self.freq_cen,
             DEG2RAD*self.parameters["psi_zero"],
-            self.parameters["RM"],
             self.parameters["alpha"],
+            self.parameters["grm"],
             DEG2RAD*self.parameters["chi"],
             DEG2RAD*self.parameters["phi"],
             DEG2RAD*self.parameters["theta"]
-        )
+        ).generate_gfr_model()
 
         self.residual = (
             -((self.stokes_q/self.p) - stokes_q_m)**2
