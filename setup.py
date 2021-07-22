@@ -84,5 +84,5 @@ setup(
         "Topic :: Scientific/Engineering :: Astronomy"
     ],
     python_requires=">=3.7",
-    console_scripts = ["rmnest = rmnest.fit_RM:main"]
+    console_scripts = "rmnest = rmnest.fit_RM:main"
 )

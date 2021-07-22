@@ -32,21 +32,22 @@ def get_input_arguments(parser):
     return parser.parse_args()
 
 class RMNest(object):
-    def __init__(self, freqs, stokes_q, stokes_u, stokes_v):
-        self.freqs = freqs
+    def __init__(self, stokes_q, stokes_u, stokes_v, freqs, freq_cen):
         self.stokes_q = stokes_q
         self.stokes_u = stokes_u
         self.stokes_v = stokes_v
+        self.freqs = freqs
+        self.freq_cen = freq_cen
 
 
     def fit_rm(self, label="RM_Nest", outdir="./", **kwargs):
         """ Runs the rotation measure fitting routine. """
         self.priors = self._get_rm_priors()
         self.likelihood = RMLikelihood(
-            stokes_q,
-            stokes_u,
-            freqs*1e6,
-            freq_cen*1e6,
+            self.stokes_q,
+            self.stokes_u,
+            self.freqs*1e6,
+            self.freq_cen*1e6,
         )
         bilby.utils.check_directory_exists_and_if_not_mkdir(outdir)
         result = bilby.run_sampler(
@@ -76,11 +77,11 @@ class RMNest(object):
         """ Runs the rotation measure fitting routine. """
         self.priors = self._get_gfr_priors(free_alpha)
         self.likelihood = GFRLikelihood(
-            stokes_q,
-            stokes_u,
-            stokes_v,
-            freq*1e6,
-            freq_cen*1e6,
+            self.stokes_q,
+            self.stokes_u,
+            self.stokes_v,
+            self.freq*1e6,
+            self.freq_cen*1e6,
         )
         bilby.utils.check_directory_exists_and_if_not_mkdir(outdir)
         result = bilby.run_sampler(
