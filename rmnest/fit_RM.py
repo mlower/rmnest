@@ -1,16 +1,21 @@
+import argparse
+import bilby
+import psrchive
+import os
+import sys
+
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=False)
-import argparse
-import os
-import sys
-import bilby
-import psrchive
+
+from .utils import *
+from .likelihood import *
+
 
 def get_input_arguments(parser):
-    parser.add_argument("-a", dest="archive", type=str, default=None, 
+    parser.add_argument("-a", dest="archive", type=str, default=None,
         help="Input data, must be a PSRCHIVE format archive.")
-    parser.add_argument("-o", dest="outdir", type=str, default="./", 
+    parser.add_argument("-o", dest="outdir", type=str, default="./",
         help="Output destination.")
     parser.add_argument("-f", dest="fscrunch", type=int, default=None,
         help="Frequency scrunch data to this many channels.")
@@ -18,117 +23,31 @@ def get_input_arguments(parser):
         help="Tell psrchive to dedisperse the data, default = False")
     parser.add_argument("-l", dest="label", type=str, default="RM_fit",
         help="Label added to output files.")
-    parser.add_argument("--window", type=str, default="0.0:1.0", 
+    parser.add_argument("--window", type=str, default="0.0:1.0",
         help="Window to place around the pulse, default = 0.0:1.0")
+    parser.add_argument("--gfr", type=str, default="False",
+        help="Fit for generalised Faraday rotation (GFR).")
+    parser.add_argument("--alpha", dest="free_alpha", type=str2bool,
+        default=False, help="Use a free spectral dependence for GFR fitting.")
     return parser.parse_args()
 
-
-def apply_weights(data, weights, pol=True):
-    """ Apply weights to zero RFI affected channels """
-
-    bins = int(np.shape(data)[-1])
-    mask = weights.T * np.ones((1,bins))
-
-    if pol == True:
-        for i in range(0,4):
-            data[i,:,:] = np.multiply(mask, data[i,:,:])
-        return data
-    else:
-        return np.multiply(mask, data)
-
-
-def get_median_and_bounds(posterior, nbins=80):
-    pdf, vals = np.histogram(posterior, nbins)
-    pdf = list(np.float_(pdf))
-
-    pdf_normalised = pdf/np.sum(pdf)
-    cdf = np.cumsum(pdf_normalised)
-
-    median = vals[np.argmin(np.abs(cdf - 0.5))]
-    low_bound = vals[np.argmin(np.abs(cdf - 0.16))]
-    upp_bound = vals[np.argmin(np.abs(cdf - 0.84))]
-
-    return median, low_bound, upp_bound
-
-
-def get_rms(data, nbin):
-    """ Returns the off pulse RMS """
-    off_pulse = data[:int(0.2*nbin)]
-    return np.sqrt((1/(0.2*nbin)) * (np.sum(off_pulse**2)))
-
-
-def find_good_bins(data, nbin, thresh):
-    """ Finds which bins contain signal > 3 * RMS """
-    rms = get_rms(data, nbin)
-    return np.argwhere(data > thresh*rms)
-
-
-def position_angle(freq, pa_zero, rm, freq_cen):
-    """ Polarisation position angle as a function of freq."""
-    c = 2.998e8 # vacuum speed of light in m/s
-    return pa_zero + rm*(((c/freq)**2) - ((c/(freq_cen))**2))
-
-
-def fit_QU(freq, q, u, pa_zero, rm, freq_cen):
-    """ Fits the linearly polarised emission """
-    pa = position_angle(freq, pa_zero, rm, freq_cen)
-    return (q**2) + (u**2) - (q*np.cos(2*pa) + u*np.sin(2*pa))**2
-
-
-class RMLikelihood(bilby.likelihood.Likelihood):
-    def __init__(self, q, u, freq, freq_cen, func):
-        """
-        The Gaussian likelihood from Bannister et al. (2019) - used for
-        measuring pulsar/FRB rotation measures.
-
-        Parameters
-        ----------
-        q, u: array_like
-            The polarisation data to analyse
-        freq: array_like
-            Corresponding frequencies the data covers (Hz)
-        freq_cen: float
-            Centre frequency of the archive (Hz)
-        func:
-            The python function to fit to the data. Note, this must take the
-            dependent variable as its first argument. The other arguments
-            will require a prior and will be sampled over (unless a fixed
-            value is given)
-        sigma: None, float, array_like
-            If None, the standard deviation of the noise is unknown and will be
-            estimated (note: this requires a prior to be given for sigma). If
-            not None, this defines the standard-deviation of the data points.
-            This can either be a single float, or an array with length equal
-            to that for `q` and `u`
-        """
-
-        super().__init__()
-        self.q = q
-        self.u = u
-        self.freq = freq
-        self.freq_cen = freq_cen
-        self._func = func
-        self.parameters = dict(pa_zero=None, rm=None, sigma=None)
-
-    def log_likelihood(self):
-        self.sigma = self.parameters["sigma"]
-
-        self.residual = self._func(self.freq, self.q, self.u, 
-            self.parameters["pa_zero"], self.parameters["rm"],
-            self.freq_cen)
-
-        ln_l = np.sum(-(self.residual/(2*(self.sigma**2))) -
-            np.log(2*np.pi*(self.sigma**2)) / 2)
-        return ln_l
-
-
 class RMNest(object):
-    def __init__(self, Stokes_Q, Stokes_U, freqs, freq_cen):
-        self.priors = self._get_priors()
-        self.likelihood = RMLikelihood(Stokes_Q, Stokes_U, freqs*1e6, freq_cen*1e6, fit_QU)
+    def __init__(self, freqs, stokes_q, stokes_u, stokes_v):
+        self.freqs = freqs
+        self.stokes_q = stokes_q
+        self.stokes_u = stokes_u
+        self.stokes_v = stokes_v
 
-    def fit(self, label="RM_Nest", outdir="./", **kwargs):
+
+    def fit_rm(self, label="RM_Nest", outdir="./", **kwargs):
         """ Runs the rotation measure fitting routine. """
+        self.priors = self._get_rm_priors()
+        self.likelihood = RMLikelihood(
+            stokes_q,
+            stokes_u,
+            freqs*1e6,
+            freq_cen*1e6,
+        )
         bilby.utils.check_directory_exists_and_if_not_mkdir(outdir)
         result = bilby.run_sampler(
             likelihood=self.likelihood,
@@ -152,9 +71,45 @@ class RMNest(object):
 
         print("RM = {0} +{1}/-{2} rad/m^2 (68% CI)".format(rm, rm_upp, rm_low))
 
-    def plot(self):
+
+    def fit_gfr(self, label="RM_Nest", outdir="./", free_alpha=False, **kwargs):
+        """ Runs the rotation measure fitting routine. """
+        self.priors = self._get_gfr_priors(free_alpha)
+        self.likelihood = GFRLikelihood(
+            stokes_q,
+            stokes_u,
+            stokes_v,
+            freq*1e6,
+            freq_cen*1e6,
+        )
+        bilby.utils.check_directory_exists_and_if_not_mkdir(outdir)
+        result = bilby.run_sampler(
+            likelihood=self.likelihood,
+            priors=self.priors,
+            sampler="dynesty",
+            nlive=1024,
+            outdir=outdir,
+            plot=False,
+            label=label,
+            **kwargs,
+        )
+
+        self.result = result
+        self.post_json_file = bilby.result.result_file_name(outdir, result.label)
+
+        posterior = result.posterior.rm
+        median, low_bound, upp_bound = get_median_and_bounds(posterior)
+        rm = median
+        rm_upp = upp_bound - median
+        rm_low = median - low_bound
+
+        print("RM = {0} +{1}/-{2} rad/m^2 (68% CI)".format(rm, rm_upp, rm_low))
+
+
+    def plot_corner(self):
         self.result.plot_corner(dpi=100)
         plt.close()
+
 
     @classmethod
     def from_psrchive(cls, ar_file, window, dedisperse=None, fscrunch=None):
@@ -182,21 +137,47 @@ class RMNest(object):
         zeroed_chans = np.argwhere(Stokes_I <= 0.0)
 
         # Extract Stokes Q & U
-        Stokes_Q = np.delete(on_pulse[1,:], zeroed_chans)
-        Stokes_U = np.delete(on_pulse[2,:], zeroed_chans)
+        stokes_q = np.delete(on_pulse[1,:], zeroed_chans)
+        stokes_u = np.delete(on_pulse[2,:], zeroed_chans)
+        stokes_v = np.delete(on_pulse[3,:], zeroed_chans)
 
         # Get channel frequencies and centre frequency
         freqs = np.delete(archive.get_frequencies(), zeroed_chans)
         freq_cen = archive.get_centre_frequency()
 
-        return cls(Stokes_Q, Stokes_U, freqs, freq_cen)
+        return cls(stokes_q, stokes_u, stokes_v, freqs, freq_cen)
 
-    def _get_priors(self):
+
+    def _get_rm_priors(self):
         # Set bilby priors
         priors = bilby.prior.PriorDict()
-        priors["rm"] = bilby.core.prior.Uniform(-2000, 2000, r"RM (rad m$^{-2}$)")
-        priors["pa_zero"] = bilby.core.prior.Uniform(-np.pi/2, np.pi, r"$\Psi_{0}$ (deg)")
+        priors["rm"] = bilby.core.prior.Uniform(-2000, 2000,
+            r"RM (rad m$^{-2}$)")
+        priors["pa_zero"] = bilby.core.prior.Uniform(-np.pi/2, np.pi,
+            r"$\Psi_{0}$ (deg)")
         priors["sigma"] = bilby.core.prior.Uniform(0, 1e4, r"$\sigma$")
+        return priors
+
+
+    def _get_gfr_priors(self, free_alpha):
+        priors = bilby.prior.PriorDict()
+        priors["psi_zero"] = bilby.core.prior.Uniform(-45, 45,
+            r"$\Psi_{0} (deg)$")
+        priors["chi"] = bilby.core.prior.Uniform(-90, 90, r"$\chi_{0} (deg)$")
+        priors["phi"] = bilby.core.prior.Uniform(-180, 0, r"$\varphi (deg)$")
+        priors["theta"] = bilby.core.prior.Uniform(0, 360, r"$\theta (deg)$")
+        priors["sigma"] = bilby.core.prior.Uniform(0, 100, r"$\sigma$")
+
+        # Set spectral dependency to be free, or fixed at freq^-3
+        if free_alpha == "True":
+            priors["alpha"] = bilby.core.prior.Uniform(0, 10, r"$\alpha$")
+            priors["grm"] = bilby.core.prior.Uniform(0, 200,
+                r"GRM (rad m$^{-\alpha}$)")
+        else:
+            priors["alpha"] = bilby.core.prior.DeltaFunction(3, r"$\alpha$")
+            priors["grm"] = bilby.core.prior.Uniform(0, 200,
+                r"GRM (rad m$^{-3}$)")
+
         return priors
 
 
@@ -207,13 +188,27 @@ def main():
     if args.archive is None:
         raise ValueError('No archive specified.')
 
-    rmnest = RMNest.from_psrchive(args.archive, args.window, dedisperse=args.dedisperse, fscrunch=args.fscrunch)
-    rmnest.fit(label=args.label, outdir=args.outdir)
-    rmnest.plot()
+    rmnest = RMNest.from_psrchive(
+        args.archive,
+        args.window,
+        dedisperse=args.dedisperse,
+        fscrunch=args.fscrunch
+    )
+
+    if args.gfr == "True":
+        if args.free_alpha == "True":
+            rmnest.fit_gfr(label=args.label, outdir=args.outdir,
+                free_alpha=True)
+        else:
+            rmnest.fit_gfr(label=args.label, outdir=args.outdir)
+    else:
+        rmnest.fit_rm(label=args.label, outdir=args.outdir)
+
+    rmnest.plot_corner()
 
     print("Done!")
+
 
 # If run directly
 if __name__ == "__main__":
     main()
-
