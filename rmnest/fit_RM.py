@@ -157,9 +157,9 @@ class RMNest(object):
 
         priors["psi_zero"] = bilby.core.prior.Uniform(-90, 90,
             r"$\Psi_{0} (deg)$")
-        priors["chi"] = bilby.core.prior.Uniform(-45, 45, r"$\chi_{0} (deg)$")
+        priors["chi"] = bilby.core.prior.Uniform(-45, 45, r"$\chi (deg)$")
         priors["phi"] = bilby.core.prior.Uniform(-180, 180, r"$\varphi (deg)$")
-        priors["theta"] = bilby.core.prior.Uniform(0, 180, r"$\theta (deg)$")
+        priors["theta"] = bilby.core.prior.Uniform(0, 180, r"$\vartheta (deg)$")
         priors["sigma"] = bilby.core.prior.Uniform(0, 100, r"$\sigma$")
 
         return priors
