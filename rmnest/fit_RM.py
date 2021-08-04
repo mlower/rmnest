@@ -155,11 +155,11 @@ class RMNest(object):
                 r"GRM (rad m$^{-3}$)")
             priors["alpha"] = bilby.core.prior.DeltaFunction(3, r"$\alpha$")
 
-        priors["psi_zero"] = bilby.core.prior.Uniform(-45, 45,
+        priors["psi_zero"] = bilby.core.prior.Uniform(-90, 90,
             r"$\Psi_{0} (deg)$")
-        priors["chi"] = bilby.core.prior.Uniform(-90, 90, r"$\chi_{0} (deg)$")
-        priors["phi"] = bilby.core.prior.Uniform(-180, 0, r"$\varphi (deg)$")
-        priors["theta"] = bilby.core.prior.Uniform(0, 360, r"$\theta (deg)$")
+        priors["chi"] = bilby.core.prior.Uniform(-45, 45, r"$\chi_{0} (deg)$")
+        priors["phi"] = bilby.core.prior.Uniform(-180, 180, r"$\varphi (deg)$")
+        priors["theta"] = bilby.core.prior.Uniform(0, 180, r"$\theta (deg)$")
         priors["sigma"] = bilby.core.prior.Uniform(0, 100, r"$\sigma$")
 
         return priors
