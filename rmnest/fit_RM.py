@@ -136,7 +136,7 @@ class RMNest(object):
         priors = bilby.prior.PriorDict()
         priors["rm"] = bilby.core.prior.Uniform(-2000, 2000,
             r"RM (rad m$^{-2}$)")
-        priors["psi_zero"] = bilby.core.prior.Uniform(-np.pi/2, np.pi,
+        priors["psi_zero"] = bilby.core.prior.Uniform(-90, 90,
             r"$\Psi_{0}$ (deg)")
         priors["sigma"] = bilby.core.prior.Uniform(0, 1e4, r"$\sigma$")
         return priors
