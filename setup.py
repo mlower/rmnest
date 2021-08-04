@@ -72,7 +72,7 @@ setup(
     packages=find_packages(exclude=["test", "venv", "priors"]),
     package_dir={"rmnest": "rmnest"},
     package_data={"rmnest": [version_file]},
-    install_requires=["future", "numpy", "matplotlib", "bilby"],
+    install_requires=["future", "numpy", "scipy", "matplotlib", "bilby"],
     classifiers=[
         "Operating System :: OS Independent",
         "License :: OSI Approved :: MIT License",
@@ -84,5 +84,7 @@ setup(
         "Topic :: Scientific/Engineering :: Astronomy"
     ],
     python_requires=">=3.7",
-    console_scripts = "rmnest = rmnest.fit_RM:main"
+    entry_points={
+        'console_scripts': ['rmnest=rmnest.fit_RM:main'],
+    }
 )

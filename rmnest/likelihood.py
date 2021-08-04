@@ -1,8 +1,6 @@
 import numpy as np
 import bilby
-from model import FaradayRotation,GeneralisedFaradayRotation
-
-DEG2RAD = np.pi/180
+from rmnest.model import GeneralisedFaradayRotation
 
 
 class RMLikelihood(bilby.likelihood.Likelihood):
@@ -31,20 +29,34 @@ class RMLikelihood(bilby.likelihood.Likelihood):
         self.stokes_u = stokes_u
         self.freq = freq
         self.freq_cen = freq_cen
-        self.parameters = dict(pa_zero=None, rm=None, sigma=None)
+
+        # Linear polarisation
+        self.l = np.sqrt(self.stokes_q**2 + self.stokes_u**2)
+
+        self.parameters = dict.fromkeys(["psi_zero", "rm", "sigma"], None)
 
     def log_likelihood(self):
         self.sigma = self.parameters["sigma"]
+        fr_model = GeneralisedFaradayRotation(
+            self.freq,
+            self.freq_cen,
+            self.parameters["psi_zero"],
+            2,
+            self.parameters["rm"],
+            0,
+            0,
+            0
+        )
 
-        self.RM_model = FaradayRotation(self.stokes_q, self.stokes_u, self.freq,
-            self.freq_cen, self.parameters["pa_zero"], self.parameters["rm"]
+        self.residual = (
+            ((self.stokes_q/self.l) - fr_model.m_q)**2
+            + ((self.stokes_u/self.l) - fr_model.m_u)**2
             )
 
-        self.residual = self.RM_model.fit_QU()
-
-        ln_l = np.sum(-(self.residual/(2*(self.sigma**2))) -
-            np.log(2*np.pi*(self.sigma**2)) / 2)
+        ln_l = np.sum(-(self.residual/(2*(self.sigma**2)))
+            - np.log(2*np.pi*(self.sigma**2)) / 2)
         return ln_l
+
 
 
 class GFRLikelihood(bilby.likelihood.Likelihood):
@@ -74,32 +86,33 @@ class GFRLikelihood(bilby.likelihood.Likelihood):
         self.stokes_v = stokes_v
         self.freq = freq
         self.freq_cen = freq_cen
-        self.parameters = dict(psi_zero=None, grm=None, alpha=None, chi=None,
-            phi=None, theta=None, sigma=None)
-
-    def log_likelihood(self):
-        self.sigma = self.parameters["sigma"]
 
         # Total polarisation
         self.p = np.sqrt(self.stokes_q**2 + self.stokes_u**2 + self.stokes_v**2)
 
-        stokes_q_m, stokes_u_m, stokes_v_m = GeneralisedFaradayRotation(
+        self.parameters = dict.fromkeys(
+            ["psi_zero", "grm", "alpha", "chi", "phi", "theta", "sigma"], None
+        )
+
+    def log_likelihood(self):
+        self.sigma = self.parameters["sigma"]
+        gfr_model = GeneralisedFaradayRotation(
             self.freq,
             self.freq_cen,
-            DEG2RAD*self.parameters["psi_zero"],
+            self.parameters["psi_zero"],
             self.parameters["alpha"],
             self.parameters["grm"],
-            DEG2RAD*self.parameters["chi"],
-            DEG2RAD*self.parameters["phi"],
-            DEG2RAD*self.parameters["theta"]
-        ).generate_gfr_model()
+            self.parameters["chi"],
+            self.parameters["phi"],
+            self.parameters["theta"]
+        )
 
         self.residual = (
-            -((self.stokes_q/self.p) - stokes_q_m)**2
-            - ((self.stokes_u/self.p) - stokes_u_m)**2
-            - ((self.stokes_v/self.p) - stokes_v_m)**2
+            ((self.stokes_q/self.p) - gfr_model.m_q)**2
+            + ((self.stokes_u/self.p) - gfr_model.m_u)**2
+            + ((self.stokes_v/self.p) - gfr_model.m_v)**2
             )
 
-        ln_l = np.sum((self.residual/(2*(self.sigma**2)))
+        ln_l = np.sum(-(self.residual/(2*(self.sigma**2)))
             - np.log(2*np.pi*(self.sigma**2)) / 2)
         return ln_l

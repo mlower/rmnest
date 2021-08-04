@@ -1,6 +1,7 @@
 import numpy as np
 
-c = 2.998e8 # vacuum speed of light in m/s
+from scipy import constants
+from scipy.spatial.transform import Rotation
 
 
 class FaradayRotation(object):
@@ -110,54 +111,41 @@ class GeneralisedFaradayRotation(object):
         self.phi = phi
         self.theta = theta
 
-
-    def get_Psi(self):
-        """ Model linear position angle """
-        pa_freq = (self.psi_0 + self.grm*(((c/self.freq)**self.alpha)
-            - ((c/(self.freq_cen))**self.alpha)))
-        return pa_freq
-
-    
-    def Q_model(self):
-        """ Stokes Q model """
-        return np.cos(2*self.psi) * np.cos(2*self.chi)
-
-
-    def U_model(self):
-        """ Stokes U model """
-        return np.sin(2*self.psi) * np.cos(2*self.chi)
-
-    def V_model(self):
-        """ Stokes V model """
-        return np.sin(2*self.chi)
-
-
-    def rotate_V(self):
-        """ Rotation about the V axis """
-        return np.array([
-            [np.cos(self.phi), -np.sin(self.phi), 0],
-            [np.sin(self.phi), np.cos(self.phi), 0],
-            [0, 0, 1]])
-
-
-    def rotate_U(self):
-        """ Rotation about the U axis """
-        return np.array([
-            [np.cos(self.theta), 0, np.sin(self.theta)],
-            [0, 1, 0],
-            [-np.sin(self.theta), 0, np.cos(self.theta)]])
-
-
-    def generate_gfr_model(self):
-        """ Generate the generalised Faraday rotation model """
-
-        self.psi = self.get_Psi()
-        stokes_params = np.transpose(
-            np.array([self.Q_model(), self.U_model(), self.V_model()])
-            )
-
-        rotated_stokes = np.transpose(
-            stokes_params.dot(self.rotate_U()).dot(self.rotate_V())
+        # Model linear position angle
+        psi = np.deg2rad(psi_0) + grm * (
+            ((constants.c / (freq * constants.mega)) ** alpha)
+            - ((constants.c / (freq_cen * constants.mega)) ** alpha)
         )
+        self._psi = psi
 
-        return rotated_stokes[0], rotated_stokes[1], rotated_stokes[2]
+        # Model Stokes components
+        stokes_q = np.cos(2 * psi) * np.cos(2 * np.deg2rad(chi))
+        stokes_u = np.sin(2 * psi) * np.cos(2 * np.deg2rad(chi))
+        stokes_v = np.sin(2 * np.deg2rad(chi))
+
+        stokes_params = np.array(
+            [stokes_q, stokes_u, np.repeat(stokes_v, len(self.freq))], dtype=float
+        )
+        # Rotation about the V and U axis
+        rot = Rotation.from_euler("zy", [phi, theta], degrees=True)
+        self._rotated_stokes = rot.apply(stokes_params.T, inverse=True).T
+
+    @property
+    def psi(self):
+        return self._psi
+
+    @property
+    def rotated_stokes(self):
+        return self._rotated_stokes
+
+    @property
+    def m_q(self):
+        return self.rotated_stokes[0]
+
+    @property
+    def m_u(self):
+        return self.rotated_stokes[1]
+
+    @property
+    def m_v(self):
+        return self.rotated_stokes[2]
