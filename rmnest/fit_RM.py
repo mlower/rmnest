@@ -1,16 +1,12 @@
 import argparse
 import bilby
-import psrchive
-import os
-import sys
 
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=False)
 
 from utils import *
-from model import *
-from likelihood import *
+from likelihood import RMLikelihood, GFRLikelihood
 
 
 def get_input_arguments(parser):
@@ -40,21 +36,26 @@ class RMNest(object):
         self.freqs = freqs
         self.freq_cen = freq_cen
 
-
-    def fit_rm(self, label="RM_Nest", outdir="./", **kwargs):
+    def fit(self, gfr=False, free_alpha=False, label="RM_Nest", outdir="./", sampler="dynesty", **kwargs):
         """ Runs the rotation measure fitting routine. """
-        self.priors = self._get_rm_priors()
-        self.likelihood = RMLikelihood(
-            self.stokes_q,
-            self.stokes_u,
-            self.freqs*1e6,
-            self.freq_cen*1e6,
-        )
+        if gfr:
+            self.priors = self._get_gfr_priors(free_alpha)
+            self.likelihood = GFRLikelihood(
+                self.stokes_q,
+                self.stokes_u,
+                self.stokes_v,
+                self.freqs,
+                self.freq_cen,
+            )
+        else:
+            self.priors = self._get_rm_priors()
+            self.likelihood = RMLikelihood(self.stokes_q, self.stokes_u, self.freqs, self.freq_cen)
+
         bilby.utils.check_directory_exists_and_if_not_mkdir(outdir)
         result = bilby.run_sampler(
             likelihood=self.likelihood,
             priors=self.priors,
-            sampler="dynesty",
+            sampler=sampler,
             nlive=512,
             outdir=outdir,
             plot=False,
@@ -65,50 +66,20 @@ class RMNest(object):
         self.result = result
         self.post_json_file = bilby.result.result_file_name(outdir, result.label)
 
-        posterior = result.posterior.rm
-        median, low_bound, upp_bound = get_median_and_bounds(posterior)
-        rm = median
-        rm_upp = upp_bound - median
-        rm_low = median - low_bound
+    def print_summary(self):
+        for iparam, param in enumerate(self.result.search_parameter_keys):
+            posterior = self.result.posterior[param]
+            median, low_bound, upp_bound = get_median_and_bounds(posterior)
+            param_label = self.result.parameter_labels[iparam]
+            print(f"{param_label} = {0} +{upp_bound - median}/-{median - low_bound} (68% CI)")
 
-        print("RM = {0} +{1}/-{2} rad/m^2 (68% CI)".format(rm, rm_upp, rm_low))
-
-
-    def fit_gfr(self, label="RM_Nest", outdir="./", free_alpha=False, **kwargs):
-        """ Runs the rotation measure fitting routine. """
-        self.priors = self._get_gfr_priors(free_alpha)
-        self.likelihood = GFRLikelihood(
-            self.stokes_q,
-            self.stokes_u,
-            self.stokes_v,
-            self.freqs*1e6,
-            self.freq_cen*1e6,
-        )
-        bilby.utils.check_directory_exists_and_if_not_mkdir(outdir)
-        result = bilby.run_sampler(
-            likelihood=self.likelihood,
-            priors=self.priors,
-            sampler="dynesty",
-            nlive=512,
-            outdir=outdir,
-            plot=False,
-            label=label,
-            **kwargs
-        )
-
-        self.result = result
-        self.post_json_file = bilby.result.result_file_name(outdir,
-            result.label)
-
-        posterior = result.posterior.grm
-        median, low_bound, upp_bound = get_median_and_bounds(posterior)
-        grm = median
-        grm_upp = upp_bound - median
-        grm_low = median - low_bound
-
-        print("GRM = {0} +{1}/-{2} rad/m^alpha (68% CI)".format(grm, grm_upp, 
-            grm_low))
-
+    def print_bilby_summary(self, quantiles=(0.16, 0.84)):
+        for iparam, param in enumerate(self.result.search_parameter_keys):
+            posterior = self.result.posterior[param]
+            param_summary = self.result.get_one_dimensional_median_and_error_bar(param, fmt=".2f", quantiles=quantiles)
+            param_label = self.result.parameter_labels[iparam]
+            conf_interval = quantiles[1] - quantiles[0]
+            print(f"{param_label} = {param_summary.median} +{param_summary.plus}/-{param_summary.minus} ({int(conf_interval*100):d}% CI)")
 
     def plot_corner(self):
         self.result.plot_corner(dpi=100)
@@ -117,6 +88,7 @@ class RMNest(object):
 
     @classmethod
     def from_psrchive(cls, ar_file, window, dedisperse=None, fscrunch=None):
+        import psrchive
         archive = psrchive.Archive_load(ar_file)
         archive.remove_baseline()
         if dedisperse is not None:
@@ -151,36 +123,44 @@ class RMNest(object):
 
         return cls(stokes_q, stokes_u, stokes_v, freqs, freq_cen)
 
+    @classmethod
+    def from_stokesfile(cls, stokes_file):
+        spec_data = np.loadtxt(stokes_file)
+        freqs = spec_data[:,0]
+        freq_cen = np.median(freqs)
+        print(f"Using freq_cen = {freq_cen}")
+        return cls(spec_data[:,1], spec_data[:,2], spec_data[:,3], spec_data[:,4], freqs, freq_cen)
 
     def _get_rm_priors(self):
         # Set bilby priors
         priors = bilby.prior.PriorDict()
         priors["rm"] = bilby.core.prior.Uniform(-2000, 2000,
             r"RM (rad m$^{-2}$)")
-        priors["pa_zero"] = bilby.core.prior.Uniform(-np.pi/2, np.pi,
+        priors["psi_zero"] = bilby.core.prior.Uniform(-np.pi/2, np.pi,
             r"$\Psi_{0}$ (deg)")
         priors["sigma"] = bilby.core.prior.Uniform(0, 1e4, r"$\sigma$")
         return priors
 
 
-    def _get_gfr_priors(self, free_alpha):
+    def _get_gfr_priors(self, free_alpha=False):
         priors = bilby.prior.PriorDict()
+
+        # Set spectral dependency to be free, or fixed at freq^-3
+        if free_alpha == True:
+            priors["grm"] = bilby.core.prior.Uniform(0, 200,
+                r"GRM (rad m$^{-\alpha}$)")
+            priors["alpha"] = bilby.core.prior.Uniform(0, 10, r"$\alpha$")
+        else:
+            priors["grm"] = bilby.core.prior.Uniform(0, 200,
+                r"GRM (rad m$^{-3}$)")
+            priors["alpha"] = bilby.core.prior.DeltaFunction(3, r"$\alpha$")
+
         priors["psi_zero"] = bilby.core.prior.Uniform(-45, 45,
             r"$\Psi_{0} (deg)$")
         priors["chi"] = bilby.core.prior.Uniform(-90, 90, r"$\chi_{0} (deg)$")
         priors["phi"] = bilby.core.prior.Uniform(-180, 0, r"$\varphi (deg)$")
         priors["theta"] = bilby.core.prior.Uniform(0, 360, r"$\theta (deg)$")
         priors["sigma"] = bilby.core.prior.Uniform(0, 100, r"$\sigma$")
-
-        # Set spectral dependency to be free, or fixed at freq^-3
-        if free_alpha == True:
-            priors["alpha"] = bilby.core.prior.Uniform(0, 10, r"$\alpha$")
-            priors["grm"] = bilby.core.prior.Uniform(0, 200,
-                r"GRM (rad m$^{-\alpha}$)")
-        else:
-            priors["alpha"] = bilby.core.prior.DeltaFunction(3, r"$\alpha$")
-            priors["grm"] = bilby.core.prior.Uniform(0, 200,
-                r"GRM (rad m$^{-3}$)")
 
         return priors
 
@@ -198,16 +178,8 @@ def main():
         dedisperse=args.dedisperse,
         fscrunch=args.fscrunch
     )
-
-    if args.gfr == True:
-        if args.free_alpha == True:
-            rmnest.fit_gfr(label=args.label, outdir=args.outdir,
-                free_alpha=True)
-        else:
-            rmnest.fit_gfr(label=args.label, outdir=args.outdir)
-    else:
-        rmnest.fit_rm(label=args.label, outdir=args.outdir)
-
+    rmnest.fit(gfr=args.gfr, free_alpha=args.free_alpha, label=args.label, outdir=args.outdir)
+    rmnest.print_summary()
     rmnest.plot_corner()
 
     print("Done!")
