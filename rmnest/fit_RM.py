@@ -5,8 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.rc('text', usetex=False)
 
-from utils import *
-from likelihood import RMLikelihood, GFRLikelihood
+from rmnest.utils import *
+from rmnest.likelihood import RMLikelihood, GFRLikelihood
 
 
 def get_input_arguments(parser):
