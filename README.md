@@ -19,7 +19,7 @@ Fitting for generalised Faraday rotation (see e.g. [Kennett &amp; Melrose (1998)
 ```
 python ./rmnest/fit_RM.py -a <archive>.ar -o <outdir> -l testrun --window 0.45:0.55 --alpha True
 ```
-Omitting the `--alpha` flag will result in the spectral exponent being fixed to 3. Details of the underlying phenomenological model will be presented in a forthcoming work.
+Omitting the `--alpha` flag will result in the spectral exponent being fixed to 3. Details of the underlying phenomenological model can be found in a technical document by [Lower (2021)](https://ui.adsabs.harvard.edu/abs/2021arXiv210809429L).
 
 The likelihood and Faraday rotation models, as well as the general `RMFit` class in `fit_RM.py`, can also be imported like any other API. 
 
@@ -65,5 +65,24 @@ archivePrefix = {arXiv},
 }
 ```
 and include a [link](https://github.com/mlower/rmnest) to this repository.
+
+Alternatively, if the generalised Faraday rotation fitting is used, please include a citation to
+```
+@ARTICLE{2021arXiv210809429L,
+       author = {{Lower}, Marcus E.},
+        title = "{A phenomenological model for measuring generalised Faraday rotation}",
+      journal = {arXiv e-prints},
+     keywords = {Astrophysics - High Energy Astrophysical Phenomena},
+         year = 2021,
+        month = aug,
+          eid = {arXiv:2108.09429},
+        pages = {arXiv:2108.09429},
+archivePrefix = {arXiv},
+       eprint = {2108.09429},
+ primaryClass = {astro-ph.HE},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2021arXiv210809429L},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+```
 
 
