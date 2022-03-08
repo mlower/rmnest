@@ -47,7 +47,7 @@ Alternatively, fitting for the generalised form of Faraday rotation, sometimes r
 by adding the ``--gfr`` and ``--alpha`` flags as
 
 ```
-python ./rmnest/fit_RM.py -a <archive>.ar -o <outdir> -l testrun --window 0.45:0.55 --alpha True
+python ./rmnest/fit_RM.py -a <archive>.ar -o <outdir> -l testrun --window 0.45:0.55 --gfr True --alpha True
 ```
 
 Omitting the `--alpha` flag will result in the spectral exponent being fixed to 3. Details of the underlying phenomenological model can be found in a technical document by [Lower (2021)](https://ui.adsabs.harvard.edu/abs/2021arXiv210809429L).
