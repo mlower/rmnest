@@ -9,7 +9,7 @@ class FaradayRotation(object):
     Fits a Faraday rotation model directly to the input Stokes Q and U spectra.
 
     See supplementary materials of Bannister et al. (2019) for details
-    (arXiv:)
+    (arXiv:1906.11476)
     """
     def __init__(self,
         stokes_q,
@@ -64,10 +64,11 @@ class FaradayRotation(object):
 
 class GeneralisedFaradayRotation(object):
     """
-    Fits a Faraday rotation model directly to the input Stokes Q and U spectra.
+    Fits phenomenological generalised Faraday rotation model directly to the 
+    input Stokes Q, U and V spectra.
 
-    See supplementary materials of Bannister et al. (2019) for details
-    (arXiv:)
+    See Lower (2020) for details
+    (arXiv:2108.09429)
     """
     def __init__(self,
         freq,
