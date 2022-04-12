@@ -11,14 +11,8 @@ class FaradayRotation(object):
     See supplementary materials of Bannister et al. (2019) for details
     (arXiv:1906.11476)
     """
-    def __init__(self,
-        stokes_q,
-        stokes_u,
-        freq,
-        freq_cen,
-        pa_0,
-        rm
-    ):
+
+    def __init__(self, stokes_q, stokes_u, freq, freq_cen, pa_0, rm):
         """
         Parameters
         ----------
@@ -46,68 +40,70 @@ class FaradayRotation(object):
         self.rm = rm
 
     def compute_position_angle(self):
-        """ Polarisation position angle as a function of freq."""
-        pa_freq = (self.pa_0 + self.rm*(((c/self.freq)**2)
-            - ((c/(self.freq_cen))**2)))
+        """Polarisation position angle as a function of freq."""
+        pa_freq = self.pa_0 + self.rm * (
+            ((c / self.freq) ** 2) - ((c / (self.freq_cen)) ** 2)
+        )
         return pa_freq
 
-
     def fit_QU(self):
-        """ Fits the linearly polarised emission """
+        """Fits the linearly polarised emission"""
         pa = self.compute_position_angle()
 
-        residuals = ((self.stokes_q**2) + (self.stokes_u**2)
-            - (self.stokes_q*np.cos(2*pa) + self.stokes_u*np.sin(2*pa))**2)
+        residuals = (
+            (self.stokes_q**2)
+            + (self.stokes_u**2)
+            - (self.stokes_q * np.cos(2 * pa) + self.stokes_u * np.sin(2 * pa)) ** 2
+        )
 
         return residuals
 
 
 class GeneralisedFaradayRotation(object):
-    """
-    Fits phenomenological generalised Faraday rotation model directly to the 
-    input Stokes Q, U and V spectra.
+    """A phenomenological generalised Faraday rotation model.
 
-    See Lower (2020) for details
-    (arXiv:2108.09429)
+    Parameters
+    ----------
+    freq : np.ndarray
+        List of observing frequencies. (MHz)
+    freq_cen : float
+        Centre frequency of the observing band. (MHz)
+    psi_0 : float
+        Linear polarisation position angle corrsponding to the centre frequency (deg).
+    grm : float
+        Generalised rotation measure that encodes the strength of the Faraday effect (rad m^-alpha)
+    alpha : float, optional
+        Frequency scaling index, by default 2
+    chi : float, optional
+        Offset in the ellipticity angle, i.e the latitude of the poalrisation vector
+        on the Poincaré sphere. (deg), by default 0
+    phi : float, optional
+        Rotation of the polarisation vector about the Stokes V axis. (deg) by default 0
+    theta : float, optional
+        Rotation of the poalrisation vector about the Stokes U axis. (deg) by default 0
+
+    Notes
+    -----
+    Fits directly to the input Stokes Q, U and V spectra.
+    See Lower (2020) for details (arXiv:2108.09429)
     """
-    def __init__(self,
-        freq,
-        freq_cen,
-        psi_0,
-        alpha,
-        grm,
-        chi,
-        phi,
-        theta
-    ):
-        """
-        Parameters
-        ----------
-        freq: array_like
-            List of observing frequencies. (Hz)
-        freq_cen: float
-            Centre frequency of the observing band. (Hz)
-        psi_0: float
-            Linear polarisation position position angle corrsponding to
-            the centre frequency. (deg)
-        alpha: float
-            Frequency scaling index.
-        grm: float
-            Generalised rotation measure that encodes the strength of the
-            generalised Faraday effect. (rad m^-alpha)
-        chi: float
-            Offset in the ellipticity angle , i.e the latitude of the
-            poalrisation vector on the Poincaré sphere. (deg)
-        phi: float
-            Rotation of the polarisation vector about the Stokes V axis. (deg)
-        theta: float
-            Rotation of the poalrisation vector about the Stokes U axis. (deg)
-        """
+
+    def __init__(
+        self,
+        freq: np.ndarray,
+        freq_cen: float,
+        psi_0: float,
+        grm: float,
+        alpha: float = 2,
+        chi: float = 0,
+        phi: float = 0,
+        theta: float = 0,
+    ) -> None:
         self.freq = freq
         self.freq_cen = freq_cen
         self.psi_0 = psi_0
-        self.alpha = alpha
         self.grm = grm
+        self.alpha = alpha
         self.chi = chi
         self.phi = phi
         self.theta = theta
@@ -117,7 +113,6 @@ class GeneralisedFaradayRotation(object):
             ((constants.c / (freq * constants.mega)) ** alpha)
             - ((constants.c / (freq_cen * constants.mega)) ** alpha)
         )
-        self._psi = psi
 
         # Model Stokes components
         stokes_q = np.cos(2 * psi) * np.cos(2 * np.deg2rad(chi))
@@ -131,22 +126,24 @@ class GeneralisedFaradayRotation(object):
         rot = Rotation.from_euler("zy", [phi, theta], degrees=True)
         self._rotated_stokes = rot.apply(stokes_params.T, inverse=True).T
 
-    @property
-    def psi(self):
-        return self._psi
+        self._m_psi = psi
 
     @property
-    def rotated_stokes(self):
+    def rotated_stokes(self) -> np.ndarray:
         return self._rotated_stokes
 
     @property
-    def m_q(self):
+    def m_q(self) -> np.ndarray:
         return self.rotated_stokes[0]
 
     @property
-    def m_u(self):
+    def m_u(self) -> np.ndarray:
         return self.rotated_stokes[1]
 
     @property
-    def m_v(self):
+    def m_v(self) -> np.ndarray:
         return self.rotated_stokes[2]
+
+    @property
+    def m_psi(self) -> np.ndarray:
+        return self._m_psi
