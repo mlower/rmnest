@@ -11,17 +11,9 @@ def main() -> None:
 
 
 @main.command()
-@click.argument(
-    "ar_file",
-    type=click.Path(exists=True),
-    help="Input data, must be a PSRCHIVE format archive.",
-)
+@click.argument("ar_file", type=click.Path(exists=True))
 @click.option(
-    "-o",
-    "--outdir",
-    type=click.Path(exists=True),
-    default="./",
-    help="Output destination.",
+    "-o", "--outdir", type=click.Path(), default="./", help="Output destination."
 )
 @click.option(
     "-f", "--fscrunch", type=int, help="Frequency scrunch data to this many channels."
@@ -39,6 +31,7 @@ def main() -> None:
     "--free_alpha", is_flag=True, help="Use a free spectral dependence for GFR fitting."
 )
 def archive(ar_file, outdir, fscrunch, window, label, dedisperse, gfr, free_alpha):
+    """Fit RMNest to an archive file."""
     rmnest = RMNest.from_psrchive(
         ar_file, window, dedisperse=dedisperse, fscrunch=fscrunch
     )
@@ -50,17 +43,9 @@ def archive(ar_file, outdir, fscrunch, window, label, dedisperse, gfr, free_alph
 
 
 @main.command()
-@click.argument(
-    "stokes_file",
-    type=click.Path(exists=True),
-    help="Stokes Spectrum in a text file, with columns: freq, I, Q, U, V.",
-)
+@click.argument("stokes_file", type=click.Path(exists=True))
 @click.option(
-    "-o",
-    "--outdir",
-    type=click.Path(exists=True),
-    default="./",
-    help="Output destination.",
+    "-o", "--outdir", type=click.Path(), default="./", help="Output destination."
 )
 @click.option("--label", type=str, default="RM_Nest", help="Label added to output files.")
 @click.option("--gfr", is_flag=True, help="Fit for generalised Faraday rotation (GFR).")
@@ -68,6 +53,7 @@ def archive(ar_file, outdir, fscrunch, window, label, dedisperse, gfr, free_alph
     "--free_alpha", is_flag=True, help="Use a free spectral dependence for GFR fitting."
 )
 def txtfile(stokes_file, outdir, label, gfr, free_alpha):
+    """Fit RMNest to a text file with columns: freq, I, Q, U, V."""
     rmnest = RMNest.from_stokesfile(stokes_file)
     rmnest.fit(gfr=gfr, free_alpha=free_alpha, label=label, outdir=outdir)
     rmnest.print_summary()

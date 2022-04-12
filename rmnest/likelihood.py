@@ -44,10 +44,10 @@ class FRLikelihood(bilby.likelihood.Likelihood):
         self.freq_cen = freq_cen
 
         if rms_q is None:
-            self.rms_q = np.zeros_like(s_q)
+            rms_q = np.zeros_like(s_q)
 
         if rms_u is None:
-            self.rms_u = np.zeros_like(s_u)
+            rms_u = np.zeros_like(s_u)
 
         s_q = unumpy.uarray(s_q, rms_q)
         s_u = unumpy.uarray(s_u, rms_u)
@@ -134,10 +134,13 @@ class GFRLikelihood(bilby.likelihood.Likelihood):
         self.freq_cen = freq_cen
 
         if rms_q is None:
-            self.rms_q = np.zeros_like(s_q)
+            rms_q = np.zeros_like(s_q)
 
         if rms_u is None:
-            self.rms_u = np.zeros_like(s_u)
+            rms_u = np.zeros_like(s_u)
+
+        if rms_v is None:
+            rms_v = np.zeros_like(s_v)
 
         s_q = unumpy.uarray(s_q, rms_q)
         s_u = unumpy.uarray(s_u, rms_u)

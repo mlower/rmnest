@@ -43,7 +43,7 @@ class RMNest(object):
         else:
             self.priors = self._get_fr_priors()
             self.likelihood = FRLikelihood(
-                self.stokes_q, self.stokes_u, self.freqs, self.freq_cen
+                self.freqs, self.freq_cen, self.s_q, self.s_u, self.rms_q, self.rms_u
             )
 
         bilby.utils.check_directory_exists_and_if_not_mkdir(outdir)
@@ -126,7 +126,7 @@ class RMNest(object):
     @classmethod
     def from_stokesfile(cls, filename):
         spec = np.loadtxt(filename, unpack=True)
-        if len(spec) == 8:
+        if len(spec) == 9:
             freqs, s_i, rms_i, s_q, rms_q, s_u, rms_u, s_v, rms_v = spec
         elif len(spec) == 5:
             freqs, s_i, s_q, s_u, s_v = spec
