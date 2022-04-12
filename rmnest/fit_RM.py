@@ -145,7 +145,7 @@ class RMNest(object):
         priors["sigma"] = bilby.core.prior.Uniform(0, 1e4, r"$\sigma$")
         return priors
 
-    def _get_gfr_priors(self, free_alpha=False, free_theta=False):
+    def _get_gfr_priors(self, free_alpha=False):
         priors = bilby.prior.PriorDict()
 
         # Set spectral dependency to be free, or fixed at freq^-3
@@ -159,10 +159,7 @@ class RMNest(object):
         priors["psi_zero"] = bilby.core.prior.Uniform(-90, 90, r"$\Psi_{0} (deg)$")
         priors["chi"] = bilby.core.prior.Uniform(-45, 45, r"$\chi (deg)$")
         priors["phi"] = bilby.core.prior.Uniform(-180, 180, r"$\varphi (deg)$")
-        if free_theta:
-            priors["theta"] = bilby.core.prior.Uniform(0, 180, r"$\vartheta (deg)$")
-        else:
-            priors["theta"] = bilby.core.prior.DeltaFunction(90, r"$\vartheta (deg)$")
+        priors["theta"] = bilby.core.prior.Uniform(0, 180, r"$\vartheta (deg)$")
         priors["sigma"] = bilby.core.prior.Uniform(0, 100, r"$\sigma$")
 
         return priors

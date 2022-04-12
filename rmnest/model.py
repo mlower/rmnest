@@ -5,58 +5,50 @@ from scipy.spatial.transform import Rotation
 
 
 class FaradayRotation(object):
-    """
-    Fits a Faraday rotation model directly to the input Stokes Q and U spectra.
+    """A Faraday rotation model.
 
+    Parameters
+    ----------
+    freq : np.ndarray
+        List of observing frequencies. (MHz)
+    freq_cen : float
+        Centre frequency of the observing band. (MHz)
+    psi_0 : float
+        Linear polarisation position angle corrsponding to the centre frequency (deg).
+    rm: float
+        Rotation measure that encodes the strength of the Faraday effect. (rad m^-2)
+
+    Notes
+    -----
+    Fits a Faraday rotation model directly to the input Stokes Q and U spectra.
     See supplementary materials of Bannister et al. (2019) for details
     (arXiv:1906.11476)
     """
 
-    def __init__(self, stokes_q, stokes_u, freq, freq_cen, pa_0, rm):
-        """
-        Parameters
-        ----------
-        stokes_q: array_like
-            A list of Stokes Q flux or intensity measurements.
-        stokes_u: array_like
-            A list of Stokes U flux or intensity measurements.
-        freq: array_like
-            List of observing frequencies corresponding to each element in the
-            input Stokes Q/U lists. (Hz)
-        freq_cen: float
-            Centre frequency of the observing band. (Hz)
-        pa_0: float
-            Linear polarisation position position angle corrsponding to
-            the centre frequency. (deg)
-        rm: float
-            Rotation measure that encodes the strength of the Faraday effect.
-            (rad m^-2)
-        """
-        self.stokes_q = stokes_q
-        self.stokes_u = stokes_u
+    def __init__(self, freq: np.ndarray, freq_cen: float, psi_0: float, rm: float):
         self.freq = freq
         self.freq_cen = freq_cen
-        self.pa_0 = pa_0
+        self.psi_0 = psi_0
         self.rm = rm
 
-    def compute_position_angle(self):
-        """Polarisation position angle as a function of freq."""
-        pa_freq = self.pa_0 + self.rm * (
-            ((c / self.freq) ** 2) - ((c / (self.freq_cen)) ** 2)
+        # Model linear position angle
+        psi = np.deg2rad(psi_0) + rm * (
+            ((constants.c / (freq * constants.mega)) ** 2)
+            - ((constants.c / (freq_cen * constants.mega)) ** 2)
         )
-        return pa_freq
+        self._psi = psi
 
-    def fit_QU(self):
-        """Fits the linearly polarised emission"""
-        pa = self.compute_position_angle()
+    @property
+    def m_q(self) -> np.ndarray:
+        return np.cos(2 * self._psi)
 
-        residuals = (
-            (self.stokes_q**2)
-            + (self.stokes_u**2)
-            - (self.stokes_q * np.cos(2 * pa) + self.stokes_u * np.sin(2 * pa)) ** 2
-        )
+    @property
+    def m_u(self) -> np.ndarray:
+        return np.sin(2 * self._psi)
 
-        return residuals
+    @property
+    def m_psi(self) -> np.ndarray:
+        return 0.5 * np.arctan2(self.m_u, self.m_q)
 
 
 class GeneralisedFaradayRotation(object):
@@ -146,4 +138,8 @@ class GeneralisedFaradayRotation(object):
 
     @property
     def m_psi(self) -> np.ndarray:
-        return self._m_psi
+        return 0.5 * np.arctan2(self.m_u, self.m_q)
+
+    @property
+    def m_chi(self) -> np.ndarray:
+        return 0.5 * np.arctan2(self.m_v, np.sqrt(self.m_u**2 + self.m_q**2))
