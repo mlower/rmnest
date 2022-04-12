@@ -7,66 +7,66 @@
 *RMNest* is an open source python package for estimating both standard and generalised 
 rotation measures via direct fits to Stokes *Q*, *U* and *V* spectra.
 
-Installation
-------------
+## Installation
+
 The latest release of *RMNest* can be installed from [PyPi](https://pypi.python.org/pypi/rmnest) by running 
 the following
 
-```
+```bash
 pip install rmnest
 ```
 
 Note that while a working installation of the PSRCHIVE Python-3 bindings is
 not necessary for using *RMNest*, it is strongly recommended.
 
-Requirements
-------------
+## Requirements
+
 The following packages are required to running *RMNest*.
 
- - numpy: Array manipulation
+- numpy: Array manipulation
 
- - matplotlib: Modules for plotting
+- matplotlib: Modules for plotting
 
- - bilby: Inference calculations framework
- 
- - dynesty: Modules for nested sampling
- 
- 
-Usage
------
-*RMNest* can be run directly from the command line within using the `fit_RM.py` script. 
-As an example, the below command would run a standard rotation-measure fit on the provided test data after frequency-averaging to 128 channels 
+- bilby: Inference calculations framework
+
+- dynesty: Modules for nested sampling
+
+## Usage
+
+*RMNest* can be run directly from the command line within using the `rmnest`.
+As an example, the below command would run a standard rotation-measure fit on the provided test data after frequency-averaging to 128 channels
 within a [pulse] phase window between phase = 0.45 to 0.55
 
-```
-python ./rmnest/fit_RM.py -a test/2020-03-16-18\:12\:00.calib.ST -o test/output/ -l testrun --window 0.45:0.55 -f 128
-```
-
-Alternatively, fitting for the generalised form of Faraday rotation, sometimes referred to as Faraday conversion 
-(see e.g. [Kennett & Melrose 1998](https://ui.adsabs.harvard.edu/abs/1998PASA...15..211K/abstract)), can be performed 
-by adding the ``--gfr`` and ``--alpha`` flags as
-
-```
-python ./rmnest/fit_RM.py -a <archive>.ar -o <outdir> -l testrun --window 0.45:0.55 --gfr True --alpha True
+```bash
+rmnest archive test/2020-03-16-18\:12\:00.calib.ST -o test/output/ -l testrun --window 0.45:0.55 -f 128
 ```
 
-Omitting the `--alpha` flag will result in the spectral exponent being fixed to 3. Details of the underlying phenomenological model can be found in a technical document by [Lower (2021)](https://ui.adsabs.harvard.edu/abs/2021arXiv210809429L).
+Alternatively, fitting for the generalised form of Faraday rotation, sometimes referred to as Faraday conversion
+(see e.g. [Kennett & Melrose 1998](https://ui.adsabs.harvard.edu/abs/1998PASA...15..211K/abstract)), can be performed
+by adding the ``--gfr`` and ``--free_alpha`` flags as
+
+```bash
+rmnest archive <archive>.ar -o <outdir> -l testrun --window 0.45:0.55 --gfr --free_alpha
+```
+
+Omitting the `--free_alpha` flag will result in the spectral exponent being fixed to 3. Details of the underlying phenomenological model can be
+found in a technical document by [Lower (2021)](https://ui.adsabs.harvard.edu/abs/2021arXiv210809429L).
 
 The likelihood and Faraday rotation models, as well as the general `RMFit` class in `fit_RM.py`, can also be imported like any other API.
 
-Issues and Contributing
------------------------
-If you encounter any issues with *RMNest*, or have in mind a feature that 
-currently does not exist, then you can contribute by openning a 
-[Github Issue](https://github.com/mlower/rmnest/issues) and outlining the feature. 
+## Issues and Contributing
 
-Referencing RMNest
-------------------
-If you make use of *RMNest* in your research, we would greatly appreciate it if you 
+If you encounter any issues with *RMNest*, or have in mind a feature that
+currently does not exist, then you can contribute by openning a
+[Github Issue](https://github.com/mlower/rmnest/issues) and outlining the feature.
+
+## Referencing RMNest
+
+If you make use of *RMNest* in your research, we would greatly appreciate it if you
 cite the papers behind its development.
 
 For instance, if you only make use of the the standard rotation measure fitting, then
-please cite both [Bannister et al. (2019)](https://ui.adsabs.harvard.edu/abs/2019Sci...365..565B) 
+please cite both [Bannister et al. (2019)](https://ui.adsabs.harvard.edu/abs/2019Sci...365..565B)
 and [Lower et al. (2020)](https://ui.adsabs.harvard.edu/abs/2020ApJ...896L..37L), and include
 a [link to this repository](https://github.com/mlower/rmnest).
 
@@ -113,8 +113,7 @@ archivePrefix = {arXiv},
 }
 ```
 
-
-Alternatively, if the generalised Faraday rotation fitting is used, please include 
+Alternatively, if the generalised Faraday rotation fitting is used, please include
 a citation to [Lower (2021)](https://ui.adsabs.harvard.edu/abs/2021arXiv210809429L).
 
 ```
