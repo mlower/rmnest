@@ -1,4 +1,3 @@
-import argparse
 import bilby
 
 import numpy as np
@@ -9,24 +8,6 @@ from rmnest.utils import *
 from rmnest.likelihood import RMLikelihood, GFRLikelihood
 
 
-def get_input_arguments(parser):
-    parser.add_argument("-a", dest="archive", type=str, default=None,
-        help="Input data, must be a PSRCHIVE format archive.")
-    parser.add_argument("-o", dest="outdir", type=str, default="./",
-        help="Output destination.")
-    parser.add_argument("-f", dest="fscrunch", type=int, default=None,
-        help="Frequency scrunch data to this many channels.")
-    parser.add_argument("-d", dest="dedisperse", type=str, default="False",
-        help="Tell psrchive to dedisperse the data, default = False")
-    parser.add_argument("-l", dest="label", type=str, default="RM_fit",
-        help="Label added to output files.")
-    parser.add_argument("--window", type=str, default="0.0:1.0",
-        help="Window to place around the pulse, default = 0.0:1.0")
-    parser.add_argument("--gfr", type=str2bool, default=False,
-        help="Fit for generalised Faraday rotation (GFR).")
-    parser.add_argument("--alpha", dest="free_alpha", type=str2bool,
-        default=False, help="Use a free spectral dependence for GFR fitting.")
-    return parser.parse_args()
 
 class RMNest(object):
     def __init__(self, stokes_q, stokes_u, stokes_v, freqs, freq_cen):
@@ -164,27 +145,3 @@ class RMNest(object):
 
         return priors
 
-
-def main():
-    parser = argparse.ArgumentParser()
-    args = get_input_arguments(parser)
-
-    if args.archive is None:
-        raise ValueError('No archive specified.')
-
-    rmnest = RMNest.from_psrchive(
-        args.archive,
-        args.window,
-        dedisperse=args.dedisperse,
-        fscrunch=args.fscrunch
-    )
-    rmnest.fit(gfr=args.gfr, free_alpha=args.free_alpha, label=args.label, outdir=args.outdir)
-    rmnest.print_summary()
-    rmnest.plot_corner()
-
-    print("Done!")
-
-
-# If run directly
-if __name__ == "__main__":
-    main()
