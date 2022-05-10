@@ -67,7 +67,7 @@ class RMNest(object):
             median, low_bound, upp_bound = utils.get_median_and_bounds(posterior)
             param_label = self.result.parameter_labels[iparam]
             print(
-                f"{param_label} = {0} +{upp_bound - median}/-{median - low_bound} (68% CI)"
+                f"{param_label} = {median} +{upp_bound - median}/-{median - low_bound} (68% CI)"
             )
 
     def print_bilby_summary(self, quantiles=(0.16, 0.84)):
