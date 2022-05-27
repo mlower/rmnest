@@ -1,6 +1,7 @@
+<a href="https://ascl.net/2204.008"><img src="https://img.shields.io/badge/ascl-2204.008-blue.svg?colorB=262255" alt="ascl:2204.008" /></a>
 [![PyPI](https://img.shields.io/pypi/v/rmnest.svg?label=PyPI)](https://pypi.python.org/pypi/rmnest)
 [![Python](https://img.shields.io/pypi/pyversions/rmnest.svg?label=Python)](https://pypi.python.org/pypi/rmnest)
-[![License](https://img.shields.io/pypi/l/rmnest.svg?colorB=purple&label=License)](https://github.com/abatten/rmnest/raw/master/LICENSE) 
+[![License](https://img.shields.io/pypi/l/rmnest.svg?colorB=purple&label=License)](https://github.com/mlower/rmnest/blob/main/LICENSE) 
 
 # RMNest
 
