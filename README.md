@@ -1,16 +1,16 @@
 <a href="https://ascl.net/2204.008"><img src="https://img.shields.io/badge/ascl-2204.008-blue.svg?colorB=262255" alt="ascl:2204.008" /></a>
 [![PyPI](https://img.shields.io/pypi/v/rmnest.svg?label=PyPI)](https://pypi.python.org/pypi/rmnest)
 [![Python](https://img.shields.io/pypi/pyversions/rmnest.svg?label=Python)](https://pypi.python.org/pypi/rmnest)
-[![License](https://img.shields.io/pypi/l/rmnest.svg?colorB=purple&label=License)](https://github.com/mlower/rmnest/blob/main/LICENSE) 
+[![License](https://img.shields.io/pypi/l/rmnest.svg?colorB=purple&label=License)](https://github.com/mlower/rmnest/blob/main/LICENSE)
 
 # RMNest
 
-*RMNest* is an open source python package for estimating both standard and generalised 
+*RMNest* is an open source python package for estimating both standard and generalised
 rotation measures via direct fits to Stokes *Q*, *U* and *V* spectra.
 
 ## Installation
 
-The latest release of *RMNest* can be installed from [PyPi](https://pypi.python.org/pypi/rmnest) by running 
+The latest release of *RMNest* can be installed from [PyPi](https://pypi.python.org/pypi/rmnest) by running
 the following
 
 ```bash
@@ -34,7 +34,7 @@ The following packages are required to running *RMNest*.
 
 ## Usage
 
-*RMNest* can be run directly from the command line within using the `rmnest`.
+*RMNest* can be run directly from the command line within using `rmnest`.
 As an example, the below command would run a standard rotation-measure fit on the provided test data after frequency-averaging to 128 channels
 within a [pulse] phase window between phase = 0.45 to 0.55
 
@@ -47,7 +47,7 @@ Alternatively, fitting for the generalised form of Faraday rotation, sometimes r
 by adding the ``--gfr`` and ``--free_alpha`` flags as
 
 ```bash
-rmnest archive <archive>.ar -o <outdir> -l testrun --window 0.45:0.55 --gfr --free_alpha
+rmnest <archive>.ar -o <outdir> -l testrun --window 0.45:0.55 --gfr --free_alpha
 ```
 
 Omitting the `--free_alpha` flag will result in the spectral exponent being fixed to 3. Details of the underlying phenomenological model can be
@@ -64,12 +64,28 @@ currently does not exist, then you can contribute by openning a
 ## Referencing RMNest
 
 If you make use of *RMNest* in your research, we would greatly appreciate it if you
-cite the papers behind its development.
+cite both the ASCL entry ([Lower et al. 2022](https://ui.adsabs.harvard.edu/abs/2022ascl.soft04008L))
+and the papers behind its development.
 
-For instance, if you only make use of the the standard rotation measure fitting, then
-please cite both [Bannister et al. (2019)](https://ui.adsabs.harvard.edu/abs/2019Sci...365..565B)
-and [Lower et al. (2020)](https://ui.adsabs.harvard.edu/abs/2020ApJ...896L..37L), and include
-a [link to this repository](https://github.com/mlower/rmnest).
+```
+@software{2022ascl.soft04008L,
+       author = {{Lower}, Marcus E. and {Kumar}, Pravir and {Shannon}, Ryan M.},
+        title = "{RMNest: Bayesian approach to measuring Faraday rotation and conversion in radio signals}",
+     keywords = {Software},
+ howpublished = {Astrophysics Source Code Library, record ascl:2204.008},
+         year = 2022,
+        month = apr,
+          eid = {ascl:2204.008},
+        pages = {ascl:2204.008},
+archivePrefix = {ascl},
+       eprint = {2204.008},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2022ascl.soft04008L},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+```
+
+For standard rotation measure fitting, then
+please cite [Bannister et al. (2019)](https://ui.adsabs.harvard.edu/abs/2019Sci...365..565B).
 
 ```
 @ARTICLE{2019Sci...365..565B,
@@ -91,30 +107,7 @@ archivePrefix = {arXiv},
 }
 ```
 
-and
-
-```
-@ARTICLE{2020ApJ...896L..37L,
-       author = {{Lower}, Marcus E. and {Shannon}, Ryan M. and {Johnston}, Simon and {Bailes}, Matthew},
-        title = "{Spectropolarimetric Properties of Swift J1818.0-1607: A 1.4 s Radio Magnetar}",
-      journal = {\apjl},
-     keywords = {992, 1108, 1306, 1353, Astrophysics - High Energy Astrophysical Phenomena},
-         year = 2020,
-        month = jun,
-       volume = {896},
-       number = {2},
-          eid = {L37},
-        pages = {L37},
-          doi = {10.3847/2041-8213/ab9898},
-archivePrefix = {arXiv},
-       eprint = {2004.11522},
- primaryClass = {astro-ph.HE},
-       adsurl = {https://ui.adsabs.harvard.edu/abs/2020ApJ...896L..37L},
-      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
-}
-```
-
-Alternatively, if the generalised Faraday rotation fitting is used, please include
+If you used *RMNest* for generalised Faraday rotation measure fitting, please include
 a citation to [Lower (2021)](https://ui.adsabs.harvard.edu/abs/2021arXiv210809429L).
 
 ```
