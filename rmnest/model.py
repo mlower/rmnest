@@ -48,7 +48,7 @@ class FaradayRotation(object):
 
     @property
     def m_psi(self) -> np.ndarray:
-        return 0.5 * np.arctan2(self.m_u, self.m_q)
+        return self._psi
 
 
 class GeneralisedFaradayRotation(object):

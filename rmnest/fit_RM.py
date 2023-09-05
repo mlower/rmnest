@@ -43,7 +43,10 @@ class RMNest(object):
         else:
             self.priors = self._get_fr_priors()
             self.likelihood = FRLikelihood(
-                self.freqs, self.freq_cen, self.s_q, self.s_u, self.rms_q, self.rms_u
+                self.freqs, 
+                self.freq_cen, 
+                self.s_q, 
+                self.s_u
             )
 
         bilby.utils.check_directory_exists_and_if_not_mkdir(outdir)
