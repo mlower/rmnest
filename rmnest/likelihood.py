@@ -2,8 +2,8 @@ from __future__ import annotations
 import numpy as np
 import bilby
 from uncertainties import unumpy
-#from rmnest.model import GeneralisedFaradayRotation
-import circular
+from rmnest.model import GeneralisedFaradayRotation
+
 
 class FRLikelihood(bilby.likelihood.Likelihood):
     """
@@ -192,45 +192,20 @@ class GFRLikelihood(bilby.likelihood.Likelihood):
         return np.sqrt(self.norm_s_v_rms**2 + self.parameters["sigma"] ** 2)
 
     def log_likelihood(self):
-        gfr_model   =   circular.circular(
-                                            self.freq,
-                                            self.freq_cen,
-                                            self.parameters["psi_zero"],
-                                            self.parameters["grm"],
-                                            self.parameters["alpha"],
-                                            self.parameters["chi"],
-                                            self.parameters["phi"],
-                                            self.parameters["theta"],
-                                         )
-        
-        
-        '''
-        frequency : input rank-1 array('d') with bounds (len_ch)
-        frequency_cen : input float
-        psi_0 : input float
-        grm : input float
-        alpha : input float
-        chi : input float
-        phi : input float
-        theta : input float
-        '''
-        
-        
-        
-        #gfr_model = GeneralisedFaradayRotation(
-        #    self.freq,
-        #    self.freq_cen,
-        #    self.parameters["psi_zero"],
-        #    self.parameters["grm"],
-        #    alpha=self.parameters["alpha"],
-        #    chi=self.parameters["chi"],
-        #    phi=self.parameters["phi"],
-        #    theta=self.parameters["theta"],
-        #)
+        gfr_model = GeneralisedFaradayRotation(
+            self.freq,
+            self.freq_cen,
+            self.parameters["psi_zero"],
+            self.parameters["grm"],
+            alpha=self.parameters["alpha"],
+            chi=self.parameters["chi"],
+            phi=self.parameters["phi"],
+            theta=self.parameters["theta"],
+        )
 
-        residual_q = (self.norm_s_q - gfr_model[:,0]) / self.norm_s_q_sigma
-        residual_u = (self.norm_s_u - gfr_model[:,1]) / self.norm_s_u_sigma
-        residual_v = (self.norm_s_v - gfr_model[:,2]) / self.norm_s_v_sigma
+        residual_q = (self.norm_s_q - gfr_model.m_q) / self.norm_s_q_sigma
+        residual_u = (self.norm_s_u - gfr_model.m_u) / self.norm_s_u_sigma
+        residual_v = (self.norm_s_v - gfr_model.m_v) / self.norm_s_v_sigma
         ln_l_q = np.sum(residual_q**2 + np.log(2 * np.pi * self.norm_s_q_sigma**2))
         ln_l_u = np.sum(residual_u**2 + np.log(2 * np.pi * self.norm_s_u_sigma**2))
         ln_l_v = np.sum(residual_v**2 + np.log(2 * np.pi * self.norm_s_v_sigma**2))
