@@ -1,6 +1,0 @@
-f2py -c circular.f90 -lm -m circular -DF2PY_REPORT_ON_ARRAY_COPY=1 --f90flags='-fcheck=bounds -frepack-arrays -C' 
-#--fcompiler=gfortran
-
-#f2py -c Dedis.f90 -lfftw3 -lm -m incoherent_dedisp -DF2PY_REPORT_ON_ARRAY_COPY=1 --f90flags='-fcheck=bounds -frepack-arrays -C' 
-#--fcompiler=gfortran
-
