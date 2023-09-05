@@ -62,7 +62,7 @@ class FRLikelihood(bilby.likelihood.Likelihood):
         ln_l = np.sum(- (self.residuals / (self.parameters["sigma"]**2)) / 2 -
                        np.log(2 * np.pi * self.parameters["sigma"]**2) / 2)
 
-        return -0.5 * ln_l
+        return ln_l
 
 
 class GFRLikelihood(bilby.likelihood.Likelihood):
@@ -175,7 +175,9 @@ class GFRLikelihood(bilby.likelihood.Likelihood):
         residual_q = (self.norm_s_q - gfr_model.m_q) / self.norm_s_q_sigma
         residual_u = (self.norm_s_u - gfr_model.m_u) / self.norm_s_u_sigma
         residual_v = (self.norm_s_v - gfr_model.m_v) / self.norm_s_v_sigma
-        ln_l_q = np.sum(residual_q**2 + np.log(2 * np.pi * self.norm_s_q_sigma**2))
-        ln_l_u = np.sum(residual_u**2 + np.log(2 * np.pi * self.norm_s_u_sigma**2))
-        ln_l_v = np.sum(residual_v**2 + np.log(2 * np.pi * self.norm_s_v_sigma**2))
-        return -0.5 * (ln_l_q + ln_l_u + ln_l_v)
+
+        ln_l_q = np.sum(- (residual_q**2) / 2 - np.log(2 * np.pi * self.norm_s_q_sigma**2) / 2)
+        ln_l_u = np.sum(- (residual_u**2) / 2 - np.log(2 * np.pi * self.norm_s_u_sigma**2) / 2)
+        ln_l_v = np.sum(- (residual_v**2) / 2 - np.log(2 * np.pi * self.norm_s_v_sigma**2) / 2)
+
+        return ln_l_q + ln_l_u + ln_l_v
