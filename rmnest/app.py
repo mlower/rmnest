@@ -24,7 +24,7 @@ def main() -> None:
     default="0.0:1.0",
     help="Window to place around the pulse, default = 0.0:1.0.",
 )
-@click.option("--label", type=str, default="RM_Nest", help="Label added to output files.")
+@click.option("-l", "--label", type=str, default="RM_Nest", help="Label added to output files.")
 @click.option("--dedisperse", is_flag=True, help="Tell psrchive to dedisperse the data.")
 @click.option("--gfr", is_flag=True, help="Fit for generalised Faraday rotation (GFR).")
 @click.option(
@@ -47,7 +47,7 @@ def archive(ar_file, outdir, fscrunch, window, label, dedisperse, gfr, free_alph
 @click.option(
     "-o", "--outdir", type=click.Path(), default="./", help="Output destination."
 )
-@click.option("--label", type=str, default="RM_Nest", help="Label added to output files.")
+@click.option("-l", "--label", type=str, default="RM_Nest", help="Label added to output files.")
 @click.option("--gfr", is_flag=True, help="Fit for generalised Faraday rotation (GFR).")
 @click.option(
     "--free_alpha", is_flag=True, help="Use a free spectral dependence for GFR fitting."
